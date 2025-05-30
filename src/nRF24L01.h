@@ -20,8 +20,12 @@ public:
     void begin();
     void hardReset();
 
-    bool isDataAvaliable();
-    bool readData();
+    bool isDataAvaliable(); // TODO
+    void readData(uint8_t& buffer); // TODO
+
+    void sendData(uint8_t* data); // TODO
+
+    void setChanel(uint8_t chanel); // should be 0-127 TODO
 
     void test(); // remove later
 private:
@@ -42,8 +46,6 @@ private:
     void setModeRX();
     void setModeTX();
 
-    void setChanel(uint8_t chanel); // should be 0-127
-
     void writeRegister(uint8_t adress, uint8_t value);
     void writeRegister(uint8_t adress, uint8_t* values , uint8_t length);
     void readRegister(uint8_t adress, uint8_t& buffer);
@@ -54,6 +56,11 @@ private:
 
     void flushRX();
     void flushTX(); 
+
+    void writeTX_Buffer(uint8_t* data);
+    void readRX_Buffer(uint8_t* buffer);
+
+    void transmit();
 };
 
 

@@ -337,7 +337,7 @@ void nRF24L01::test(){
         Serial.println(val);
     }
 
-    writeRegister(STATUS, 0x70); // Clear IRQs
+    writeRegister(STATUS, STATUS_RESET_VALUE); // Clear IRQs
     uint8_t status; 
     readRegister(STATUS,status);
 
