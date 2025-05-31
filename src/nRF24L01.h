@@ -39,12 +39,6 @@ private:
     void CE_High();
 
     void powerUp();
-    void powerDown();
-
-    void setModeStandby();
-    void setModeStandbyII();
-    void setModeRX();
-    void setModeTX();
 
     void writeRegister(uint8_t adress, uint8_t value);
     void writeRegister(uint8_t adress, uint8_t* values , uint8_t length);

@@ -301,7 +301,9 @@ nRF24L01::nRF24L01(uint8_t CE_PIN,uint8_t CSN_PIN) : CE_PIN(CE_PIN), CSN_PIN(CSN
 }
 
 nRF24L01::~nRF24L01(){
-
+    uint8_t config;
+    readRegister(CONFIG,config);
+    writeRegister(CONFIG,config & (~PWR_UP)); // power down the chip to minimise power consumption
 }
 
 
