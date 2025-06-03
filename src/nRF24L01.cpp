@@ -72,10 +72,6 @@
 #define PLL_LOCK                BIT_4
 #define RF_DR                   BIT_3
 #define RF_PWR                  (BIT_1 | BIT_2) 
-#define RF_PWR_18dBm            0x0
-#define RF_PWR_12dBm            0x1
-#define RF_PWR_0dBm             0x2
-#define RF_PWR_6dBm             0x3
 #define LNA_HCURR               BIT_0
 #define RF_SETUP_BIT_MASK       (BIT_7 | BIT_6 | BIT_5 | BIT_4)
 #define RF_SETUP_RESET_VALUE    0x0F                        //0000 1111
@@ -95,7 +91,7 @@
 #define ARC_CNT                 (BIT_3 | BIT_2 | BIT_1 | BIT_0)    
 #define OBSERVE_TX_RESET_VALUE  0x00                        //0000 0000
 //---------------------------------------------CD--------------------------------------------------------
-#define CD                      BIT_0                       // register used to TODO
+#define CD                      0x09                       // register used to TODO
 #define CD_BIT_MASK             (~BIT_0) //bits 7-1
 #define CD_RESET_VALUE          0x00                        //0000 0000
 //---------------------------------------------RX_ADDR_P0--------------------------------------------------------
@@ -206,7 +202,12 @@ void nRF24L01::beginTransaction(){
     SPI.beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
 }
 
-void nRF24L01::readRegister(uint8_t adress, uint8_t* buffer , uint8_t length) {
+void nRF24L01::endTransaction() {
+    SPI.endTransaction();
+}
+
+uint8_t* nRF24L01::readRegister(uint8_t adress, uint8_t length) {
+    uint8_t buffer[length]; // create an array of uint8 with size of length
     beginTransaction();
     CSN_Low();
     SPI.transfer(SPI_R_REGISTER | (adress & SPI_REGISTER_BITMASK)); // set the adress with the read command and make shure the adress is within the bitmask
@@ -214,14 +215,17 @@ void nRF24L01::readRegister(uint8_t adress, uint8_t* buffer , uint8_t length) {
         buffer[i] = SPI.transfer(DUMMY_BYTE);                       // transfer dummy bytes to receive data without sending a command
     }
     CSN_High();
+    endTransaction();
 }
 
-void nRF24L01::readRegister(uint8_t adress, uint8_t& buffer) {
+uint8_t nRF24L01::readRegister(uint8_t adress) {
+    uint8_t buffer;
     beginTransaction();
     CSN_Low();
     SPI.transfer(SPI_R_REGISTER | (adress & SPI_REGISTER_BITMASK)); // set the adress with the read command and make shure the adress is within the bitmask
     buffer = SPI.transfer(DUMMY_BYTE);                              // transfer dummy bytes to receive data without sending a command 
     CSN_High();
+    endTransaction();
 }
 
 
@@ -231,6 +235,7 @@ void nRF24L01::writeRegister(uint8_t adress, uint8_t value){
     SPI.transfer(SPI_W_REGISTER | (adress & SPI_REGISTER_BITMASK)); // set the adress with the write command and make shure the adress is within the bitmask
     SPI.transfer(value);                                            // send the value to the adress
     CSN_High();
+    endTransaction();
 }
 
 void nRF24L01::writeRegister(uint8_t adress, uint8_t* values , uint8_t length){
@@ -241,6 +246,7 @@ void nRF24L01::writeRegister(uint8_t adress, uint8_t* values , uint8_t length){
         SPI.transfer(values[i]);                                   // send the values from the array to the adress
     }   
     CSN_High();
+    endTransaction();
 }
 
 void nRF24L01::resetRegisters() {
@@ -301,30 +307,82 @@ nRF24L01::nRF24L01(uint8_t CE_PIN,uint8_t CSN_PIN) : CE_PIN(CE_PIN), CSN_PIN(CSN
 }
 
 nRF24L01::~nRF24L01(){
-    uint8_t config;
-    readRegister(CONFIG,config);
-    writeRegister(CONFIG,config & (~PWR_UP)); // power down the chip to minimise power consumption
+    writeRegister(
+        CONFIG,
+        readRegister(CONFIG) & ~PWR_UP
+    ); // power down the chip to minimise power consumption
 }
 
-
+void nRF24L01::set_CE_Pin(uint8_t CE_PIN) {
+    this->CE_PIN = CE_PIN;
+}
+void nRF24L01::set_CSN_Pin(uint8_t CSN_PIN){
+    this->CSN_PIN = CSN_PIN;
+}
 
 void nRF24L01::begin(){
-    beginTransaction();
+    if (not CSN_PIN or not CE_PIN){ // check if csn or ce is defined
+        if (not CSN_PIN){
+            Serial.println("nRF24L01 begin() failed: CSN pin is not defined");
+        }
+        if (not CE_PIN){
+            Serial.println("nRF24L01 begin() failed: CE pin is not defined");
+        }
+        return;
+    }
+    // set csn and ce to output
     pinMode(CSN_PIN, OUTPUT);
     pinMode(CE_PIN, OUTPUT);
+    
+    SPI.begin();
+    beginTransaction(); // start spi transaction with the correct settings
 
-    digitalWrite(CSN_PIN, HIGH); 
+    digitalWrite(CSN_PIN, HIGH);  
     digitalWrite(CE_PIN, LOW); 
 
-    SPI.begin();
-    resetRegisters();
+    resetRegisters(); // reset the important registers for a clean start
 
-    uint8_t config;
-    readRegister(CONFIG,config);
-    writeRegister(CONFIG,config | PWR_UP);
+    writeRegister(
+        CONFIG,
+        readRegister(CONFIG) | PWR_UP
+    ); // set the power up bit to 1 to power up the chip in standby-I mode
 
-    delay(3); // minimal 1.5ms
+    delay(3); // powerdown-> standby-I minimal 1.5ms 
 }
+
+void nRF24L01::setRetransmits(ARC_Retransmit arc, ARD_Wait_uS ard) {
+    uint8_t value = (ard << 4) | arc;
+    writeRegister(SETUP_RETR, value);
+}
+
+void nRF24L01::setPowerMode(nRF24L01_PowerMode mode) {
+    uint8_t setup = readRegister(RF_SETUP) & ~(BIT_2 | BIT_1); // clear RF_PWR bits
+    setup |= mode << 1;                                        // move mode to bit 1 (RF_PWR)
+    writeRegister(RF_SETUP, setup);
+}
+
+void nRF24L01::setMode(nRF24L01_Mode mode) {
+    uint8_t config = readRegister(CONFIG);
+    if (mode == RF24L01_Mode_RECEIVE) {
+        config |= PRIM_RX; // set PRIM_RX to 1
+    } else if (mode == RF24L01_Mode_TRANSMIT){
+        config &= ~PRIM_RX; // set PRIM_RX to 0
+    } else{
+        return; // invalid
+    }
+    writeRegister(CONFIG, config);
+}
+
+bool nRF24L01::isDataAvaliable() {
+    uint8_t status = readRegister(STATUS);
+    return (status & STATUS_RX_DR); // returns STATUS_RX_DR 0
+}
+
+
+
+
+
+
 
 
 void nRF24L01::test(){ 
@@ -351,3 +409,5 @@ void nRF24L01::test(){
     }
 
 }
+
+
