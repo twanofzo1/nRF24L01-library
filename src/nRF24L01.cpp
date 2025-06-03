@@ -193,17 +193,24 @@ void nRF24L01::CSN_Low(){
 }
 
 
-
-void nRF24L01::beginTransaction(){
-    //spi speed for nRF24L01 rated to max 10mhz arduino is not(8mhz)
-    // 8mhz
-    //most significant bit first
-    // spi mode 0 
-    SPI.beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
+void nRF24L01::writeRegister(uint8_t adress, uint8_t value){
+    beginTransaction();
+    CSN_Low();
+    SPI.transfer(SPI_W_REGISTER | (adress & SPI_REGISTER_BITMASK)); // set the adress with the write command and make shure the adress is within the bitmask
+    SPI.transfer(value);                                            // send the value to the adress
+    CSN_High();
+    endTransaction();
 }
 
-void nRF24L01::endTransaction() {
-    SPI.endTransaction();
+void nRF24L01::writeRegister(uint8_t adress, uint8_t* values , uint8_t length){
+    beginTransaction();
+    CSN_Low();
+    SPI.transfer(SPI_W_REGISTER | (adress & SPI_REGISTER_BITMASK));// set the adress with the write command and make shure the adress is within the bitmask
+    for (int i = 0; i < length; i++) {                              
+        SPI.transfer(values[i]);                                   // send the values from the array to the adress
+    }   
+    CSN_High();
+    endTransaction();
 }
 
 uint8_t* nRF24L01::readRegister(uint8_t adress, uint8_t length) {
@@ -229,25 +236,21 @@ uint8_t nRF24L01::readRegister(uint8_t adress) {
 }
 
 
-void nRF24L01::writeRegister(uint8_t adress, uint8_t value){
-    beginTransaction();
-    CSN_Low();
-    SPI.transfer(SPI_W_REGISTER | (adress & SPI_REGISTER_BITMASK)); // set the adress with the write command and make shure the adress is within the bitmask
-    SPI.transfer(value);                                            // send the value to the adress
-    CSN_High();
-    endTransaction();
+
+void nRF24L01::beginTransaction(){
+    //spi speed for nRF24L01 rated to max 10mhz arduino is not(8mhz)
+    // 8mhz
+    //most significant bit first
+    // spi mode 0 
+    SPI.beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
 }
 
-void nRF24L01::writeRegister(uint8_t adress, uint8_t* values , uint8_t length){
-    beginTransaction();
-    CSN_Low();
-    SPI.transfer(SPI_W_REGISTER | (adress & SPI_REGISTER_BITMASK));// set the adress with the write command and make shure the adress is within the bitmask
-    for (int i = 0; i < length; i++) {                              
-        SPI.transfer(values[i]);                                   // send the values from the array to the adress
-    }   
-    CSN_High();
-    endTransaction();
+void nRF24L01::endTransaction() {
+    SPI.endTransaction();
 }
+
+
+
 
 void nRF24L01::resetRegisters() {
     writeRegister(CONFIG, CONFIG_RESET_VALUE);
@@ -261,29 +264,6 @@ void nRF24L01::resetRegisters() {
     writeRegister(STATUS, STATUS_RESET_VALUE);
 }
 
-void nRF24L01::hardReset() {
-    resetRegisters();
-    writeRegister(SETUP_AW, SETUP_AW_RESET_VALUE);
-    uint8_t rx_addr_p1_reset_value[5] = RX_ADDR_P1_RESET_VALUE;
-    writeRegister(RX_ADDR_P1, rx_addr_p1_reset_value,5);
-    writeRegister(RX_ADDR_P2, RX_ADDR_P2_RESET_VALUE);
-    writeRegister(RX_ADDR_P3, RX_ADDR_P3_RESET_VALUE);
-    writeRegister(RX_ADDR_P4, RX_ADDR_P4_RESET_VALUE);
-    writeRegister(RX_ADDR_P5, RX_ADDR_P5_RESET_VALUE);
-    uint8_t tx_addr_reset_value[5] = TX_ADDR_RESET_VALUE;
-    writeRegister(TX_ADDR, tx_addr_reset_value,5);
-    writeRegister(RX_PW_P0, RX_PW_P0_RESET_VALUE);
-    writeRegister(RX_PW_P1, RX_PW_P1_RESET_VALUE);
-    writeRegister(RX_PW_P2, RX_PW_P2_RESET_VALUE);
-    writeRegister(RX_PW_P3, RX_PW_P3_RESET_VALUE);
-    writeRegister(RX_PW_P4, RX_PW_P4_RESET_VALUE);
-    writeRegister(RX_PW_P5, RX_PW_P5_RESET_VALUE);
-    writeRegister(FIFO_STATUS, FIFO_STATUS_RESET_VALUE);
-    writeRegister(DYNPDc, DYNPDc_RESET_VALUE);
-    writeRegister(FEATUREc, FEATUREc_RESET_VALUE);
-}
-
-
 void nRF24L01::flushTX() {
     CSN_Low();
     SPI.transfer(SPI_FLUSH_TX);
@@ -296,15 +276,22 @@ void nRF24L01::flushRX() {
     CSN_High();
 }
 
+void nRF24L01::writeTX_Buffer(uint8_t* data){
 
-
-nRF24L01::nRF24L01(){
-    //TODO
 }
 
-nRF24L01::nRF24L01(uint8_t CE_PIN,uint8_t CSN_PIN) : CE_PIN(CE_PIN), CSN_PIN(CSN_PIN){
-    //TODO
+void nRF24L01::readRX_Buffer(uint8_t* buffer){
+
 }
+
+void transmitTX_Buffer(){
+
+}
+
+
+nRF24L01::nRF24L01(){}
+
+nRF24L01::nRF24L01(uint8_t CE_PIN,uint8_t CSN_PIN) : CE_PIN(CE_PIN), CSN_PIN(CSN_PIN){} // sets ce and csn
 
 nRF24L01::~nRF24L01(){
     writeRegister(
@@ -314,10 +301,10 @@ nRF24L01::~nRF24L01(){
 }
 
 void nRF24L01::set_CE_Pin(uint8_t CE_PIN) {
-    this->CE_PIN = CE_PIN;
+    this->CE_PIN = CE_PIN; // sets ce
 }
 void nRF24L01::set_CSN_Pin(uint8_t CSN_PIN){
-    this->CSN_PIN = CSN_PIN;
+    this->CSN_PIN = CSN_PIN; // setc csn
 }
 
 void nRF24L01::begin(){
@@ -350,6 +337,47 @@ void nRF24L01::begin(){
     delay(3); // powerdown-> standby-I minimal 1.5ms 
 }
 
+
+
+void nRF24L01::hardReset() {
+    resetRegisters();
+    writeRegister(SETUP_AW, SETUP_AW_RESET_VALUE);
+    uint8_t rx_addr_p1_reset_value[5] = RX_ADDR_P1_RESET_VALUE;
+    writeRegister(RX_ADDR_P1, rx_addr_p1_reset_value,5);
+    writeRegister(RX_ADDR_P2, RX_ADDR_P2_RESET_VALUE);
+    writeRegister(RX_ADDR_P3, RX_ADDR_P3_RESET_VALUE);
+    writeRegister(RX_ADDR_P4, RX_ADDR_P4_RESET_VALUE);
+    writeRegister(RX_ADDR_P5, RX_ADDR_P5_RESET_VALUE);
+    uint8_t tx_addr_reset_value[5] = TX_ADDR_RESET_VALUE;
+    writeRegister(TX_ADDR, tx_addr_reset_value,5);
+    writeRegister(RX_PW_P0, RX_PW_P0_RESET_VALUE);
+    writeRegister(RX_PW_P1, RX_PW_P1_RESET_VALUE);
+    writeRegister(RX_PW_P2, RX_PW_P2_RESET_VALUE);
+    writeRegister(RX_PW_P3, RX_PW_P3_RESET_VALUE);
+    writeRegister(RX_PW_P4, RX_PW_P4_RESET_VALUE);
+    writeRegister(RX_PW_P5, RX_PW_P5_RESET_VALUE);
+    writeRegister(FIFO_STATUS, FIFO_STATUS_RESET_VALUE);
+    writeRegister(DYNPDc, DYNPDc_RESET_VALUE);
+    writeRegister(FEATUREc, FEATUREc_RESET_VALUE);
+}
+
+bool nRF24L01::isDataAvaliable() {
+    uint8_t status = readRegister(STATUS);
+    return (status & STATUS_RX_DR); // returns STATUS_RX_DR 0
+}
+
+uint8_t nRF24L01::readData(){
+
+}
+
+void nRF24L01::send(uint8_t& data){
+
+}
+
+void nRF24L01::setFrequency(uint8_t chanel){
+
+}
+
 void nRF24L01::setRetransmits(ARC_Retransmit arc, ARD_Wait_uS ard) {
     uint8_t value = (ard << 4) | arc;
     writeRegister(SETUP_RETR, value);
@@ -373,16 +401,9 @@ void nRF24L01::setMode(nRF24L01_Mode mode) {
     writeRegister(CONFIG, config);
 }
 
-bool nRF24L01::isDataAvaliable() {
-    uint8_t status = readRegister(STATUS);
-    return (status & STATUS_RX_DR); // returns STATUS_RX_DR 0
+void nRF24L01::setHighSensitivity(bool on){
+    
 }
-
-
-
-
-
-
 
 
 void nRF24L01::test(){ 
@@ -409,5 +430,7 @@ void nRF24L01::test(){
     }
 
 }
+
+
 
 
