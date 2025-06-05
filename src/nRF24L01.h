@@ -2,6 +2,28 @@
 #include <SPI.h>
 
 
+//TODO Air data rate RF_DR in RF_SETUP
+//TODO 1/2 mbps for chanel
+
+// TODO 
+/*
+void nRF24L01::openWritingPipe(const uint8_t* address, uint8_t len) {
+    writeRegister(RX_ADDR_P0, address, len);
+    writeRegister(TX_ADDR, address, len);
+}
+
+void nRF24L01::openReadingPipe(uint8_t pipe, const uint8_t* address, uint8_t len) {
+    writeRegister(EN_RXADDR, readRegister(EN_RXADDR) | (1 << pipe));
+    if (pipe <= 1) {
+        writeRegister(RX_ADDR_P0 + pipe, address, len);
+    } else {
+        writeRegister(RX_ADDR_P0 + pipe, &address[0], 1); // Only LSB
+    }
+}
+*/
+
+
+
 /**
  * @brief Output power levels (dBm) and current consumption.
  */
@@ -9,24 +31,24 @@ enum nRF24L01_PowerMode{
     
     /**
      * -18dBm
-     * 7.0 mA dc consumption
+     * 7.0 mA dc consumption a pulse
      */
-    nRF24L01_PowerMode_LOW,
+    nRF24L01_PowerMode_NEGATIVE_18_dBm,
     /**
      * -12dBm
-     * 7.5 mA dc consumption
+     * 7.5 mA dc consumption a pulse
      */
-    nRF24L01_PowerMode_MEDIUM,
+    nRF24L01_PowerMode_NEGATIVE_12_dBm,
     /**
      * -6dBm
-     * 9.0 mA dc consumption
+     * 9.0 mA dc consumption a pulse
      */
-    nRF24L01_PowerMode_HIGH,
+    nRF24L01_PowerMode_NEGATIVE_6_dBm,
     /**
      * 0dBm
-     * 11.3 mA dc consumption
+     * 11.3 mA dc consumption a pulse
      */
-    nRF24L01_PowerMode_MAX,
+    nRF24L01_PowerMode_0_dBm,
 };
 /**
  * @brief Operating modes of the chip.
@@ -35,11 +57,11 @@ enum nRF24L01_Mode{
     /**
      * sets the mode of the receiver to transmit
      */
-    RF24L01_Mode_TRANSMIT, 
+    nRF24L01_Mode_TRANSMIT, 
     /**
      * sets the mode of the receiver to receive
      */
-    RF24L01_Mode_RECEIVE
+    nRF24L01_Mode_RECEIVE
 };
 
 /**
@@ -110,7 +132,7 @@ private:
     /**
      * @brief sets the CE pin to high
      */
-    void CE_High();
+    //void CE_High();
 
     /**
      * @brief Writes a single byte to a register.
@@ -169,17 +191,21 @@ private:
      * @brief Writes data to the TX payload buffer.
      * @param data Pointer to the data buffer (max 32 bytes).
      */
-    void writeTX_Buffer(uint8_t* data);
+    void writeTX_Buffer(const char* data);
     /**
      * @brief Reads data from the RX payload buffer.
      * @param buffer Pointer to a buffer where data will be stored.
      */
-    void readRX_Buffer(uint8_t* buffer);
+    const char* readRX_Buffer();
     /**
      * @brief Starts the transmit operation (CE pulse).
      */
-    void transmit();
+    void transmit(); // TODO
 public:
+
+
+    void CE_High(); // TODO rm later
+
     /**
      * @brief creates an nRF24 controler class
      * @note the CE and CSN pin must be provided before calling begin
@@ -201,7 +227,7 @@ public:
      * @brief sets the CE_PIN (chip enable) pin needed for spi
      */
     
-     void set_CE_Pin(uint8_t CE_PIN);
+    void set_CE_Pin(uint8_t CE_PIN);
     /**
      * @brief sets the CSN_PIN (chip select not) pin needed for spi
      */
@@ -223,12 +249,12 @@ public:
      * @note nRF24 chip must be in receiving mode
      * @return the received data
      */
-    uint8_t readData(); // TODO
+    const char* readData(); // TODO
     /**
-     * @brief sends a package of 8 bits
+     * @brief sends a package in c_str style
      * @note nRF24 must be in transmitting mode
      */
-    void send(uint8_t& data); // TODO
+    void send(const char* data); // TODO
     /**
      * @brief Sets the RF channel frequency.
      * @param channel Channel number (0–125). Anything higher will be clamped to 125.
@@ -265,4 +291,6 @@ public:
      * @note Will be removed later.
      */
     void test(); // remove later
+
+    void setPayloadSize(uint8_t size,uint8_t pipe); // TODO add comments
 };
