@@ -108,6 +108,65 @@ enum ARD_Wait_uS{ // idk
     ARD_Wait_uS_4000,
 };
 
+enum nRF24L01_AdressWidth{ // TODO
+    nRF24L01_AdressWidth_ILLEGAL,
+    nRF24L01_AdressWidth_3_Bytes,
+    nRF24L01_AdressWidth_4_Bytes,
+    nRF24L01_AdressWidth_5_Bytes
+};
+
+enum nRF24L01_AirDataRate{ // TODO
+    nRF24L01_AirDataRate_1_Mbps,
+    nRF24L01_AirDataRate_2_Mbps
+};
+
+enum nRF24L01_Pipe{
+    nRF24L01_Pipe_P0,
+    nRF24L01_Pipe_P1,
+    nRF24L01_Pipe_P2,
+    nRF24L01_Pipe_P3,
+    nRF24L01_Pipe_P4,
+    nRF24L01_Pipe_P5,
+    nRF24L01_Pipe_ALL
+};
+
+
+enum nRF24L01_PayloadSize{
+    nRF24L01_PayloadSize_NOT_USED,
+    nRF24L01_PayloadSize_1_BYTE,
+    nRF24L01_PayloadSize_2_BYTES,
+    nRF24L01_PayloadSize_3_BYTES,
+    nRF24L01_PayloadSize_4_BYTES,
+    nRF24L01_PayloadSize_5_BYTES,
+    nRF24L01_PayloadSize_6_BYTES,
+    nRF24L01_PayloadSize_7_BYTES,
+    nRF24L01_PayloadSize_8_BYTES,
+    nRF24L01_PayloadSize_9_BYTES,
+    nRF24L01_PayloadSize_10_BYTES,
+    nRF24L01_PayloadSize_11_BYTES,
+    nRF24L01_PayloadSize_12_BYTES,
+    nRF24L01_PayloadSize_13_BYTES,
+    nRF24L01_PayloadSize_14_BYTES,
+    nRF24L01_PayloadSize_15_BYTES,
+    nRF24L01_PayloadSize_16_BYTES,
+    nRF24L01_PayloadSize_17_BYTES,
+    nRF24L01_PayloadSize_18_BYTES,
+    nRF24L01_PayloadSize_19_BYTES,
+    nRF24L01_PayloadSize_20_BYTES,
+    nRF24L01_PayloadSize_21_BYTES,
+    nRF24L01_PayloadSize_22_BYTES,
+    nRF24L01_PayloadSize_23_BYTES,
+    nRF24L01_PayloadSize_24_BYTES,
+    nRF24L01_PayloadSize_25_BYTES,
+    nRF24L01_PayloadSize_26_BYTES,
+    nRF24L01_PayloadSize_27_BYTES,
+    nRF24L01_PayloadSize_28_BYTES,
+    nRF24L01_PayloadSize_29_BYTES,
+    nRF24L01_PayloadSize_30_BYTES,
+    nRF24L01_PayloadSize_31_BYTES,
+    nRF24L01_PayloadSize_32_BYTES,
+};
+
 
 class nRF24L01
 {
@@ -115,6 +174,9 @@ private:
     // variables
     uint8_t CE_PIN;
     uint8_t CSN_PIN;
+
+    void writebit(uint8_t adress, uint8_t bit, bool val);
+    void writebits(uint8_t adress, uint8_t mask, uint8_t bits);
 
     // functions
     /**
@@ -154,14 +216,6 @@ private:
      */
     uint8_t readRegister(uint8_t adress);
     /**
-     * @brief Reads multiple bytes from a register.
-     * @param address Register address.
-     * @param length Number of bytes to read.
-     * @return Pointer to buffer with data (caller must manage memory).
-     */
-    uint8_t* readRegister(uint8_t adress, uint8_t length);
-
-    /**
      * @brief Begins SPI transaction with the correct settings.
      * 8.0 mhz
      * MSB first
@@ -191,21 +245,28 @@ private:
      * @brief Writes data to the TX payload buffer.
      * @param data Pointer to the data buffer (max 32 bytes).
      */
-    void writeTX_Buffer(const char* data);
+    void writeTX_Buffer(String& data);
     /**
      * @brief Reads data from the RX payload buffer.
      * @param buffer Pointer to a buffer where data will be stored.
      */
-    const char* readRX_Buffer();
+    String readRX_Buffer();
     /**
      * @brief Starts the transmit operation (CE pulse).
      */
-    void transmit(); // TODO
+    void transmit_Payload(); 
 public:
 
+    void testConnection();
 
-    void CE_High(); // TODO rm later
+    void setAdressWidth(nRF24L01_AdressWidth adresswidth); // TODO
 
+    void setAirDataRate(nRF24L01_AirDataRate rate); // TODO
+
+    void setRX_Pipe(nRF24L01_Pipe pipe,bool on); // TODO
+
+
+    void CE_High();
     /**
      * @brief creates an nRF24 controler class
      * @note the CE and CSN pin must be provided before calling begin
@@ -249,12 +310,12 @@ public:
      * @note nRF24 chip must be in receiving mode
      * @return the received data
      */
-    const char* readData(); // TODO
+    String readData(); // TODO
     /**
      * @brief sends a package in c_str style
      * @note nRF24 must be in transmitting mode
      */
-    void send(const char* data); // TODO
+    void send(String& data); // TODO
     /**
      * @brief Sets the RF channel frequency.
      * @param channel Channel number (0–125). Anything higher will be clamped to 125.
@@ -292,5 +353,9 @@ public:
      */
     void test(); // remove later
 
-    void setPayloadSize(uint8_t size,uint8_t pipe); // TODO add comments
+    void setPayloadSize(nRF24L01_PayloadSize size, nRF24L01_Pipe pipe); // TODO
+    void setTX_adress(const uint8_t* address,uint8_t length);
+    void setRX_Address(nRF24L01_Pipe pipe, const uint8_t* address, uint8_t length);
 };
+
+

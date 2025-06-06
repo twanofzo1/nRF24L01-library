@@ -1,5 +1,5 @@
 #include "nRF24L01.h"
- 
+
 constexpr uint8_t BIT_0 = 0x01; //0000 0001 
 constexpr uint8_t BIT_1 = 0x02; //0000 0010 
 constexpr uint8_t BIT_2 = 0x04; //0000 0100 
@@ -31,7 +31,8 @@ namespace EN_AA{
     inline constexpr uint8_t P3          = BIT_3           ;    
     inline constexpr uint8_t P2          = BIT_2           ;    
     inline constexpr uint8_t P1          = BIT_1           ;    
-    inline constexpr uint8_t P0          = BIT_0           ;    
+    inline constexpr uint8_t P0          = BIT_0           ;
+    inline constexpr uint8_t ALL         = 0x1F            ;
     inline constexpr uint8_t BIT_MASK    = (BIT_6 | BIT_7) ;   
     inline constexpr uint8_t RESET_VALUE = 0x3F            ;    
 }
@@ -51,10 +52,10 @@ namespace EN_RXADDR{
 namespace SETUP_AW{
     inline constexpr uint8_t ADRESS      = 0x03                ;  
     inline constexpr uint8_t AW          = (BIT_1 | BIT_0)     ;  
-    inline constexpr uint8_t AW_ILLEGAL     = 0x0                 ;  
-    inline constexpr uint8_t AW_3_BYTES     = 0x1                 ;  
-    inline constexpr uint8_t AW_4_BYTES     = 0x2                 ;  
-    inline constexpr uint8_t AW_5_BYTES     = 0x3                 ;  
+    inline constexpr uint8_t AW_ILLEGAL     = 0x0              ;  
+    inline constexpr uint8_t AW_3_BYTES     = 0x1              ;  
+    inline constexpr uint8_t AW_4_BYTES     = 0x2              ;  
+    inline constexpr uint8_t AW_5_BYTES     = 0x3              ;  
     inline constexpr uint8_t BIT_MASK    = (~(BIT_1 | BIT_0) ) ;  
     inline constexpr uint8_t RESET_VALUE = 0x03                ;  
 }
@@ -190,13 +191,20 @@ namespace SPICOMMAND{
     inline constexpr uint8_t REUSE_TX_PL          = 0xE3 ;  //1110 0011
     inline constexpr uint8_t ACTIVATE             = 0x50 ;  //0101 0000
     inline constexpr uint8_t R_RX_PL_WIDa         = 0x60 ;  //0110 0000
-    inline constexpr uint8_t W_ACK_PAYLOADa       = 0xA8 ;  //1010 1PPP
-    inline constexpr uint8_t W_TX_PAYLOAD_NOACKa  = 0x58 ;  //1011 000
+    inline constexpr uint8_t W_ACK_PAYLOAD        = 0xA8 ;  //1010 1PPP
+    inline constexpr uint8_t W_TX_PAYLOAD_NOACK   = 0x58 ;  //1011 000
     inline constexpr uint8_t NOP                  = 0xFF ;  //1111 1111
     inline constexpr uint8_t REGISTER_BITMASK     = 0x1F ;  //0001 1111 ^ 000AAAAA the AAAAA from above
 }
 
-inline constexpr uint8_t DUMMY_BYTE               = 0xFF ;  //byte means nothing but is used for reading adresses
+// 6.1.7 Timing Information
+namespace TIMINGS{
+    inline constexpr uint8_t PWR_UP_DELAY_mS = 2; // 1.5 min
+    inline constexpr uint8_t PWR_UP_DELAY_EXTERNAL_CLK_uS = 180; //150 uS
+    inline constexpr uint8_t RX_TX_SETTLING_DELAY_uS = 160; // 130 uS 
+    inline constexpr uint8_t TRANSITION_TX_CE_HIGH_uS = 15; // min 15 uS
+}
+
 
 //----------------------------------------------------SPI READ/WRITE-------------------------------
 
@@ -213,8 +221,6 @@ void nRF24L01::CE_Low(){
 void nRF24L01::CSN_Low(){
     digitalWrite(CSN_PIN,LOW);
 }
- 
-
  
 
 void nRF24L01::writeRegister(uint8_t adress, uint8_t value){
@@ -237,33 +243,27 @@ void nRF24L01::writeRegister(uint8_t adress, uint8_t* values , uint8_t length){
     endTransaction();
 }
 
-
-
-
-uint8_t* nRF24L01::readRegister(uint8_t adress, uint8_t length) {
-    uint8_t buffer[length]; // create an array of uint8 with size of length
-    beginTransaction();
-    CSN_Low();
-    SPI.transfer(SPICOMMAND::R_REGISTER | (adress & SPICOMMAND::REGISTER_BITMASK)); // set the adress with the read command and make shure the adress is within the bitmask
-    for (int i = 0; i < length; i++) {                              // store the transfers in the buffer array
-        buffer[i] = SPI.transfer(DUMMY_BYTE);                       // transfer dummy bytes to receive data without sending a command
-    }
-    CSN_High();
-    endTransaction();
-    return buffer;
-}
-
 uint8_t nRF24L01::readRegister(uint8_t adress) {
     uint8_t buffer;
     beginTransaction();
     CSN_Low();
     SPI.transfer(SPICOMMAND::R_REGISTER | (adress & SPICOMMAND::REGISTER_BITMASK)); // set the adress with the read command and make shure the adress is within the bitmask
-    buffer = SPI.transfer(DUMMY_BYTE);                              // transfer dummy bytes to receive data without sending a command 
+    buffer = SPI.transfer(SPICOMMAND::NOP);                              
     CSN_High();
     endTransaction();
     return buffer;
 }
 
+void nRF24L01::writebit(uint8_t adress, uint8_t bit, bool val){
+    uint8_t reg = readRegister(adress); 
+    writeRegister(adress, val ? (reg | bit) : (reg & ~bit)); 
+}
+
+void nRF24L01::writebits(uint8_t adress, uint8_t mask, uint8_t bits){
+    uint8_t reg = readRegister(adress); 
+    reg = reg & ~mask;
+    writeRegister(adress, (reg | bits)); 
+}
 
 
 
@@ -273,10 +273,12 @@ void nRF24L01::beginTransaction(){
     //most significant bit first
     //spi mode 0 
     SPI.beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
+    CSN_Low();
 }
 
 void nRF24L01::endTransaction() {
     SPI.endTransaction();
+    CSN_High();
 }
 
 
@@ -317,50 +319,62 @@ void nRF24L01::hardReset() {
 
 
 void nRF24L01::flushTX() {
-    CSN_Low();
+    beginTransaction();
     SPI.transfer(SPICOMMAND::FLUSH_TX);
-    CSN_High();
+    endTransaction();
 }
 
 void nRF24L01::flushRX() {
-    CSN_Low();
+    beginTransaction();
     SPI.transfer(SPICOMMAND::FLUSH_RX);
-    CSN_High();
-}
-
-
-
-
-void nRF24L01::writeTX_Buffer(const char* data) {
-    beginTransaction();
-    CSN_Low();
-    SPI.transfer(SPICOMMAND::W_TX_PAYLOAD);
-    for (int i = 0; i < 1; i++) {
-        SPI.transfer(data[i]);
-    }
-    CSN_High();
     endTransaction();
 }
 
-const char* nRF24L01::readRX_Buffer() {
-    uint8_t* buffer;
+
+
+
+void nRF24L01::writeTX_Buffer(String& data) {
+    flushTX();                      // Clear old data
+    beginTransaction();             // Start SPI transaction
+
+    SPI.transfer(SPICOMMAND::W_TX_PAYLOAD); // Write payload command
+    const char* str = data.c_str();               
+
+    size_t len = data.length();
+    if (len > 31) len = 31;
+
+    for (size_t i = 0; i < len; ++i) {
+        SPI.transfer(str[i]);
+    }
+    SPI.transfer('\0'); // 32nd byte
+
+    endTransaction();            // End SPI transaction
+}
+
+
+String nRF24L01::readData() {
     beginTransaction();
-    CSN_Low();
     SPI.transfer(SPICOMMAND::R_RX_PAYLOAD);
-    for (int i = 0; i < 1; i++) {
-        buffer[i] = SPI.transfer(DUMMY_BYTE);
-    }
-    CSN_High();
-    endTransaction();
 
-    writeRegister(STATUS::ADRESS, STATUS::RX_DR); // clear RX_DR flag
+    String buffer;
+    for (uint8_t i = 0; i < 32; ++i) {
+        char c = SPI.transfer(SPICOMMAND::NOP);
+        if (c == '\0') break;
+        buffer += c;
+    }
+
+    writeRegister(STATUS::ADRESS, STATUS::RX_DR); // TODO look at
+
+    endTransaction();
+    return buffer;
 }
 
 
 
-void nRF24L01::transmit(){
+
+void nRF24L01::transmit_Payload(){
     CE_High();
-    delayMicroseconds(15); // 10+ uS puls
+    delayMicroseconds(TIMINGS::TRANSITION_TX_CE_HIGH_uS); // 10+ uS puls
     CE_Low();
 }
 
@@ -407,25 +421,17 @@ void nRF24L01::begin(){
     
     SPI.begin();
     beginTransaction(); // start spi transaction with the correct settings
-
-    digitalWrite(CSN_PIN, HIGH);  
-    digitalWrite(CE_PIN, LOW); 
-
-    writeRegister(CONFIG::ADRESS, 42); //42 is a random value just to check
-    if (readRegister(CONFIG::ADRESS) != 42){
-        Serial.println("nRF24L01 begin() failed: SPI connection failed please check your wirering");
-        return;
-    }
+    
+    flushRX();
+    flushTX();
 
     resetRegisters(); // reset the important registers for a clean start
 
-    writeRegister(
-        CONFIG::ADRESS,
-        readRegister(CONFIG::ADRESS) | CONFIG::PWR_UP
-    ); // set the power up bit to 1 to power up the chip in standby-I mode
+    // power up the chip
+    writebit(CONFIG::ADRESS,CONFIG::PWR_UP,true);
+    delay(TIMINGS::PWR_UP_DELAY_mS); // powerdown-> standby-I minimal 1.5ms 
 
-    delay(3); // powerdown-> standby-I minimal 1.5ms 
-
+    endTransaction();
 }
 
 
@@ -434,23 +440,21 @@ void nRF24L01::begin(){
 
 bool nRF24L01::isDataAvaliable() {
     uint8_t status = readRegister(STATUS::ADRESS);
-    return (status & STATUS::RX_DR); // returns STATUS_RX_DR 0
+    bool available = (status & STATUS::RX_DR);
+    if (available) {
+        writebit(STATUS::ADRESS, STATUS::RX_DR,true); // clear RX_DR flag
+    }
+    return available;
 }
 
-const char* nRF24L01::readData() { 
-    return readRX_Buffer();
-}
 
 
 
-
-void nRF24L01::send(const char* data) {
+void nRF24L01::send(String& data) {
     setMode(nRF24L01_Mode_TRANSMIT);
-    CE_Low();
     flushTX();
-
     writeTX_Buffer(data);
-    transmit();
+    transmit_Payload();
 
     // wacht tot verzonden of gefaald
     while (true) {
@@ -469,53 +473,32 @@ void nRF24L01::setFrequency(uint8_t channel) {
     writeRegister(RF_CH::ADRESS, channel);
 }
 
-
-
-
 void nRF24L01::setRetransmits(ARC_Retransmit arc, ARD_Wait_uS ard) {
     uint8_t value = (ard << 4) | arc;
     writeRegister(SETUP_RETR::ADRESS, value);
 }
 
-
-
 void nRF24L01::setPowerMode(nRF24L01_PowerMode mode) {
-    uint8_t setup = readRegister(RF_SETUP::ADRESS) & ~(BIT_2 | BIT_1); // clear RF_PWR bits
-    setup |= mode << 1;                                        // move mode to bit 1 (RF_PWR)
-    writeRegister(RF_SETUP::ADRESS, setup);
+    writebits(RF_SETUP::ADRESS, RF_SETUP::PWR,(mode << 1) );
 }
-
-
-
 
 void nRF24L01::setMode(nRF24L01_Mode mode) {
-    uint8_t config = readRegister(CONFIG::ADRESS);
     if (mode == nRF24L01_Mode_RECEIVE) {
-        config |= CONFIG::PRIM_RX; // set PRIM_RX to 1
-    } else if (mode == nRF24L01_Mode_TRANSMIT){
-        config &= ~CONFIG::PRIM_RX; // set PRIM_RX to 0
-    } else{
-        return; // invalid
+        writebit(CONFIG::ADRESS, CONFIG::PRIM_RX,true); // set the prim_rx bit to 1
+        CE_High(); // enable listening
+    } else {
+        CE_Low(); // disable listening
     }
-    writeRegister(CONFIG::ADRESS, config);
 }
-
-
-
 
 void nRF24L01::setHighSensitivity(bool on) { 
-    uint8_t rf_setup = readRegister(RF_SETUP::ADRESS);
-    if (on) {
-        rf_setup |= RF_SETUP::LNA_HCURR; 
-    } else {
-        rf_setup &= ~RF_SETUP::LNA_HCURR; 
-    }
-    writeRegister(RF_SETUP::ADRESS, rf_setup);
+    writebit(RF_SETUP::ADRESS,RF_SETUP::LNA_HCURR,on);
 }
 
 
 
-void nRF24L01::test(){ 
+void nRF24L01::test(){
+    
     writeRegister(RF_CH::ADRESS, 42);           
     uint8_t val= readRegister(RF_CH::ADRESS); 
 
@@ -536,15 +519,119 @@ void nRF24L01::test(){
         Serial.print("FAIL: STATUS still has flags: ");
         Serial.println(status, BIN);
     }
-
-    
-
 }
 
 
 
 
-void nRF24L01::setPayloadSize(uint8_t size, uint8_t pipe) {
-    if (size > 32 || pipe > 5) return;
-    writeRegister(RX_PW::P0 + pipe, size);
+void nRF24L01::setPayloadSize(nRF24L01_PayloadSize size, nRF24L01_Pipe pipe) {
+    switch (pipe)
+    {
+    case nRF24L01_Pipe_ALL:
+        writebits(RX_PW::P1,RX_PW::P0,size);
+        writebits(RX_PW::P1,RX_PW::P1,size);
+        writebits(RX_PW::P2,RX_PW::P2,size);
+        writebits(RX_PW::P3,RX_PW::P3,size);
+        writebits(RX_PW::P4,RX_PW::P4,size);
+        writebits(RX_PW::P5,RX_PW::P5,size);
+        break;
+    case nRF24L01_Pipe_P0:
+        writebits(RX_PW::P0,RX_PW::P0,size);
+        break;
+    case nRF24L01_Pipe_P1:
+        writebits(RX_PW::P1,RX_PW::P1,size);
+        break;
+    case nRF24L01_Pipe_P2:
+        writebits(RX_PW::P2,RX_PW::P2,size);
+        break;
+    case nRF24L01_Pipe_P3:
+        writebits(RX_PW::P3,RX_PW::P3,size);
+        break;
+    case nRF24L01_Pipe_P4:
+        writebits(RX_PW::P4,RX_PW::P4,size);
+        break;
+    case nRF24L01_Pipe_P5:
+        writebits(RX_PW::P5,RX_PW::P5,size);
+        break;
+    default:
+        return;
+    }
+}
+
+
+void nRF24L01::setAdressWidth(nRF24L01_AdressWidth adresswidth){
+    writebits(SETUP_AW::ADRESS,SETUP_AW::AW,adresswidth);
+}
+
+void nRF24L01::setAirDataRate(nRF24L01_AirDataRate rate){
+    writebits(RF_SETUP::ADRESS,RF_SETUP::DR,rate);
+}
+
+void nRF24L01::setRX_Pipe(nRF24L01_Pipe pipe, bool on){
+    switch (pipe)
+    {
+    case nRF24L01_Pipe_ALL:
+        writebits(EN_AA::ALL,EN_AA::ALL,on ?EN_AA::ALL:(~EN_AA::ALL) );
+        break;
+    case nRF24L01_Pipe_P0:
+        writebit(EN_AA::ADRESS,EN_AA::P0,on);
+        break;
+    case nRF24L01_Pipe_P1:
+        writebit(EN_AA::ADRESS,EN_AA::P1,on);
+        break;
+    case nRF24L01_Pipe_P2:
+        writebit(EN_AA::ADRESS,EN_AA::P2,on);
+        break;
+    case nRF24L01_Pipe_P3:
+        writebit(EN_AA::ADRESS,EN_AA::P3,on);
+        break;
+    case nRF24L01_Pipe_P4:
+        writebit(EN_AA::ADRESS,EN_AA::P4,on);
+        break;
+    case nRF24L01_Pipe_P5:
+        writebit(EN_AA::ADRESS,EN_AA::P5,on);
+        break;
+    default:
+        return;
+    }
+}
+
+
+void nRF24L01::setTX_adress(const uint8_t* address, uint8_t length) { // chat
+    beginTransaction();
+    SPI.transfer(SPICOMMAND::W_REGISTER | 0x10); // TX_ADDR register
+    for (uint8_t i = 0; i < length; ++i) {
+        SPI.transfer(address[i]);
+    }
+    endTransaction();
+}
+
+void nRF24L01::setRX_Address(nRF24L01_Pipe pipe, const uint8_t* address, uint8_t length) { // chat
+    if (pipe > nRF24L01_Pipe_P5) return;
+
+    beginTransaction();
+    SPI.transfer(SPICOMMAND::W_REGISTER | (0x0A + pipe)); // RX_ADDR_P0–P5 = 0x0A–0x0F
+
+    // Pipe 0 and 1 use full address, pipes 2–5 only use LSB
+    if (pipe <= nRF24L01_Pipe_P1) {
+        for (uint8_t i = 0; i < length; ++i) {
+            SPI.transfer(address[i]);
+        }
+    } else {
+        SPI.transfer(address[0]); // Only least significant byte
+    }
+
+    endTransaction();
+}
+
+
+
+void nRF24L01::testConnection(){
+    uint8_t tmp = readRegister(SETUP_AW::ADRESS);
+    writeRegister(SETUP_AW::ADRESS, 0x03); // test write (5-byte address width)
+    if (readRegister(SETUP_AW::ADRESS) != 0x03){
+        Serial.println("nRF24L01 begin() failed: SPI connection failed, please check your wiring");
+        return;
+    }
+    writeRegister(SETUP_AW::ADRESS, tmp); // restore original
 }

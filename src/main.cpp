@@ -1,34 +1,28 @@
 #include "nRF24L01.h"
-nRF24L01 radio(9, 10); 
 
-
-void setup() {
-    Serial.begin(9600);
-    radio.begin();
-    radio.setFrequency(0);
-    radio.setMode(nRF24L01_Mode_TRANSMIT);
-    radio.test();
-}
-
-void loop(){
-    const char* data = "test";
-    radio.send(data);
-    delay(100);
-}
+nRF24L01 radio(9, 10); // CE, CSN
 /*
-
 void setup() {
-    Serial.begin(9600);
-    radio.begin();
-    radio.setFrequency(0);
-    radio.setMode(nRF24L01_Mode_RECEIVE);
+  Serial.begin(9600);
+  radio.begin();
+  radio.setMode(nRF24L01_Mode_TRANSMIT);
 }
 
-void loop(){
-    if (radio.isDataAvaliable()){
-        uint8_t data = radio.readData();
-        Serial.print(data);
-        delay(1000);
-    } 
-    Serial.println("no data");
-}*/
+void loop() {
+  String payload = "test";
+  radio.send(payload);
+}
+*/
+
+void setup() {
+  Serial.begin(9600);
+  radio.begin();
+  radio.setMode(nRF24L01_Mode_RECEIVE);
+}
+
+void loop() {
+  if (radio.isDataAvaliable()){
+    String data = radio.readData();
+    Serial.println(data);
+  }
+}
