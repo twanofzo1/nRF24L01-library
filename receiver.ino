@@ -11,29 +11,20 @@ void setup() {
     radio.setPayloadSize(nRF24L01_PayloadSize_32_BYTES, nRF24L01_Pipe_P0);
     radio.setAdressWidth(nRF24L01_AdressWidth_5_Bytes);
     radio.setAirDataRate(nRF24L01_AirDataRate_1_Mbps);
-    radio.setFrequency(76); // = 2476 MHz
+    radio.setFrequency(76);
     radio.setPowerMode(nRF24L01_PowerMode_0_dBm);
-    radio.setRetransmits(ARC_Retransmit_15_Times, ARD_Wait_uS_500);
     //radio.setDynamicPayload(true);
-    radio.setTX_adress(address, 5);
     radio.setRX_Address(nRF24L01_Pipe_P0, address, 5);
-    
+    radio.setRX_Pipe(nRF24L01_Pipe_P0, true);
 
-    radio.setMode(nRF24L01_Mode_TRANSMIT);
+
+    radio.setMode(nRF24L01_Mode_RECEIVE);
 }
 
 void loop() {
-    String msg = "hellohellohellohellohellohellooo";
-    Serial.print("Sending: ");
-    Serial.println(msg);
-
-    nRF24L01_Status result = radio.send(msg);
-    if (result == nRF24L01_Status_OK) {
-        Serial.println("Send OK");
-    } else {
-        Serial.print("Send failed: ");
-        Serial.println(result);
+    if (radio.isDataAvaliable()) {
+        String msg = radio.readData();
+        Serial.print("Received: ");
+        Serial.println(msg);
     }
-
-    delay(1000);
 }

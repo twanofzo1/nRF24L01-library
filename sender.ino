@@ -23,7 +23,7 @@ void setup() {
 }
 
 void loop() {
-    String msg = "hellohellohellohellohellohellooo";
+    String msg = "hello";
     Serial.print("Sending: ");
     Serial.println(msg);
 

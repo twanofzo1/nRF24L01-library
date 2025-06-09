@@ -27,7 +27,7 @@ void nRF24L01::openReadingPipe(uint8_t pipe, const uint8_t* address, uint8_t len
 /**
  * @brief Output power levels (dBm) and current consumption.
  */
-enum nRF24L01_PowerMode{
+enum nRF24L01_PowerMode : uint8_t{
     
     /**
      * -18dBm
@@ -50,10 +50,11 @@ enum nRF24L01_PowerMode{
      */
     nRF24L01_PowerMode_0_dBm,
 };
+
 /**
  * @brief Operating modes of the chip.
  */
-enum nRF24L01_Mode{
+enum nRF24L01_Mode : uint8_t{
     /**
      * sets the mode of the receiver to transmit
      */
@@ -67,7 +68,7 @@ enum nRF24L01_Mode{
 /**
  * @brief Auto Retransmit Count options (0–15 retransmits).
  */
-enum ARC_Retransmit{ 
+enum ARC_Retransmit : uint8_t{ // TODO Comment
     ARC_Retransmit_None,
     ARC_Retransmit_1_Time,
     ARC_Retransmit_2_Times,
@@ -89,7 +90,7 @@ enum ARC_Retransmit{
 /**
  * @brief Auto Retransmit Delay options (250–4000µs).
  */
-enum ARD_Wait_uS{ // idk
+enum ARD_Wait_uS : uint8_t{ // TODO Comment
     ARD_Wait_uS_250,
     ARD_Wait_uS_500,
     ARD_Wait_uS_750,
@@ -108,19 +109,19 @@ enum ARD_Wait_uS{ // idk
     ARD_Wait_uS_4000,
 };
 
-enum nRF24L01_AdressWidth{ // TODO
+enum nRF24L01_AdressWidth : uint8_t{ // TODO Comment
     nRF24L01_AdressWidth_ILLEGAL,
     nRF24L01_AdressWidth_3_Bytes,
     nRF24L01_AdressWidth_4_Bytes,
     nRF24L01_AdressWidth_5_Bytes
 };
 
-enum nRF24L01_AirDataRate{ // TODO
+enum nRF24L01_AirDataRate : uint8_t{ // TODO Comment
     nRF24L01_AirDataRate_1_Mbps,
     nRF24L01_AirDataRate_2_Mbps
 };
 
-enum nRF24L01_Pipe{
+enum nRF24L01_Pipe : uint8_t{// TODO Comment
     nRF24L01_Pipe_P0,
     nRF24L01_Pipe_P1,
     nRF24L01_Pipe_P2,
@@ -131,7 +132,7 @@ enum nRF24L01_Pipe{
 };
 
 
-enum nRF24L01_PayloadSize{
+enum nRF24L01_PayloadSize : uint8_t{// TODO Comment
     nRF24L01_PayloadSize_NOT_USED,
     nRF24L01_PayloadSize_1_BYTE,
     nRF24L01_PayloadSize_2_BYTES,
@@ -168,33 +169,55 @@ enum nRF24L01_PayloadSize{
 };
 
 
+enum nRF24L01_Status : uint8_t{ // TODO comment
+    nRF24L01_Status_OK,
+    nRF24L01_Status_ERROR_DEVICE_NOT_FOUND,
+    nRF24L01_Status_ERROR_NO_CSN_PIN_FOUND,
+    nRF24L01_Status_ERROR_NO_CE_PIN_FOUND,
+    ERROR_INCORRECT_WIRERING,
+    ERROR_MAX_RT_REACHED,             // Max number of TX retries reached
+    ERROR_TX_FIFO_FULL,               // Cannot write payload, TX FIFO full
+    ERROR_RX_FIFO_EMPTY,              // No data to read
+    ERROR_ACK_NOT_RECEIVED,           // ACK expected but not received
+    ERROR_PIPE_DISABLED,              // Reading from a pipe that is not enabled
+};
+
 class nRF24L01
 {
 private:
-    // variables
     uint8_t CE_PIN;
     uint8_t CSN_PIN;
+    nRF24L01_Status status;
 
-    void writebit(uint8_t adress, uint8_t bit, bool val);
-    void writebits(uint8_t adress, uint8_t mask, uint8_t bits);
 
-    // functions
+    uint8_t getDynamicPayloadLength();
+
+    void writebit(uint8_t adress, uint8_t bit, bool val); // TODO Comment
+    void writebits(uint8_t adress, uint8_t mask, uint8_t bits);// TODO Comment
+
     /**
      * @brief sets the CSN pin to low
      */
     void CSN_Low();
+
+
     /**
      * @brief sets the CE pin to Low
      */
     void CE_Low();
+
+
     /**
      * @brief sets the CSN pin to high
      */
     void CSN_High();
+
+
     /**
      * @brief sets the CE pin to high
      */
-    //void CE_High();
+    void CE_High();
+
 
     /**
      * @brief Writes a single byte to a register.
@@ -202,6 +225,8 @@ private:
      * @param value Value to write.
      */
     void writeRegister(uint8_t adress, uint8_t value);
+
+
     /**
      * @brief Writes multiple bytes to a register.
      * @param address Register address.
@@ -209,12 +234,16 @@ private:
      * @param length Number of bytes to write.
      */
     void writeRegister(uint8_t adress, uint8_t* values , uint8_t length);
+
+
     /**
      * @brief Reads a single byte from a register.
      * @param address Register address.
      * @return Value read.
      */
     uint8_t readRegister(uint8_t adress);
+
+
     /**
      * @brief Begins SPI transaction with the correct settings.
      * 8.0 mhz
@@ -222,10 +251,13 @@ private:
      * SPI mode 0
      */ 
     void beginTransaction();
+
+
     /**
      * @brief Ends SPI transaction (calls SPI.endTransaction).
      */
     void endTransaction();
+
 
     /**
      * @brief resets important registers to their default state
@@ -233,89 +265,116 @@ private:
      */
     void resetRegisters();
 
+
     /**
      * @brief Clears the RX FIFO buffer.
      */
     void flushRX();
+
+
      /**
      * @brief Clears the TX FIFO buffer.
      */
     void flushTX(); 
+
+
     /**
      * @brief Writes data to the TX payload buffer.
      * @param data Pointer to the data buffer (max 32 bytes).
      */
     void writeTX_Buffer(String& data);
+
+
     /**
      * @brief Reads data from the RX payload buffer.
      * @param buffer Pointer to a buffer where data will be stored.
      */
     String readRX_Buffer();
+
+
     /**
      * @brief Starts the transmit operation (CE pulse).
      */
     void transmit_Payload(); 
+    void toggleFeatures();
 public:
-
-    void testConnection();
-
-    void setAdressWidth(nRF24L01_AdressWidth adresswidth); // TODO
-
-    void setAirDataRate(nRF24L01_AirDataRate rate); // TODO
-
-    void setRX_Pipe(nRF24L01_Pipe pipe,bool on); // TODO
+    void setAdressWidth(nRF24L01_AdressWidth adresswidth); // TODO comment
 
 
-    void CE_High();
+    void setAirDataRate(nRF24L01_AirDataRate rate); // TODO comment
+
+    
+    void setRX_Pipe(nRF24L01_Pipe pipe,bool on); // TODO comment
+
+    nRF24L01_Status getStatus(); // TODO make and comment
+    
+
     /**
      * @brief creates an nRF24 controler class
      * @note the CE and CSN pin must be provided before calling begin
      */
     nRF24L01();
+
+
     /**
      * @brief creates an nRF24 controler class and sets the CE and CSN 
      * @param CE_PIN chip enable output pin needed for SPI
      * @param CSN_PIN chip select not output pin needed for SPI
      */
-    
      nRF24L01(uint8_t CE_PIN,uint8_t CSN_PIN);
+
+
     /**
      * @brief powers off the chip
      */
-    
      ~nRF24L01();
+
+
     /**
      * @brief sets the CE_PIN (chip enable) pin needed for spi
      */
-    
     void set_CE_Pin(uint8_t CE_PIN);
+
+
     /**
      * @brief sets the CSN_PIN (chip select not) pin needed for spi
      */
     void set_CSN_Pin(uint8_t CSN_PIN);
+
+
     /**
      * @brief starts the nRF24 chip and resets registers to their default state
      */
-    void begin();
+    void begin(); // TODO returns nRF24L01_Status
+
+
     /**
      * @brief resets all registers to their default state
      */
-    void hardReset();
+    void hardReset(); // TODO returns nRF24L01_Status
+
+
     /**
      * @brief checks if a package is received and ready for reading
      */
     bool isDataAvaliable(); // TODO
+
+
     /**
      * @brief reads received data
      * @note nRF24 chip must be in receiving mode
      * @return the received data
      */
     String readData(); // TODO
+
+
     /**
      * @brief sends a package in c_str style
      * @note nRF24 must be in transmitting mode
-     */
-    void send(String& data); // TODO
+     */ 
+    nRF24L01_Status send(String& data); // TODO returns nRF24L01_Status
+
+
     /**
      * @brief Sets the RF channel frequency.
      * @param channel Channel number (0–125). Anything higher will be clamped to 125.
@@ -325,37 +384,57 @@ public:
      * The formula for the frequency is:
      * F0 = 2400 + channel [MHz].
      */
-    void setFrequency(uint8_t chanel); // TODO 
+    void setFrequency(uint8_t chanel); // TODO 2mhz spacing // TODO returns nRF24L01_Status
+
+
     /**
      * @brief Sets auto retransmit count and delay.
      * @param arc Number of retransmits (ARC).
      * @param ard Delay between retransmits (ARD) in 250µs steps.
      */
-    void setRetransmits(ARC_Retransmit arc, ARD_Wait_uS ard); // TODO 1
+    void setRetransmits(ARC_Retransmit arc, ARD_Wait_uS ard); // TODO returns nRF24L01_Status
+
+
     /**
      * @brief Sets the RF output power mode.
      * @param mode Power level (LOW, MEDIUM, HIGH, MAX).
      */
-    void setPowerMode(nRF24L01_PowerMode mode); // TODO 2
+    void setPowerMode(nRF24L01_PowerMode mode); // TODO returns nRF24L01_Status
+
+
     /**
      * @brief Sets the device mode.
      * @param mode Transmit or Receive.
      */
-    void setMode(nRF24L01_Mode mode); // TODO 3
+    void setMode(nRF24L01_Mode mode); // TODO returns nRF24L01_Status
+
+
     /**
      * @brief Enables or disables high sensitivity mode (LNA gain).
      * @param on True to enable, false to disable.
      */
-    void setHighSensitivity(bool on); // TODO
+    void setHighSensitivity(bool on); // TODO returns nRF24L01_Status
+
+
     /**
      * @brief Temporary test function for debugging.
      * @note Will be removed later.
      */
     void test(); // remove later
 
-    void setPayloadSize(nRF24L01_PayloadSize size, nRF24L01_Pipe pipe); // TODO
-    void setTX_adress(const uint8_t* address,uint8_t length);
-    void setRX_Address(nRF24L01_Pipe pipe, const uint8_t* address, uint8_t length);
+
+    void setPayloadSize(nRF24L01_PayloadSize size, nRF24L01_Pipe pipe); // TODO comment
+
+
+    void setTX_adress(const uint8_t* address,uint8_t length); // TODO Comment
+
+
+    void setRX_Address(nRF24L01_Pipe pipe, const uint8_t* address, uint8_t length); // TODO Comment
+
+
+    void testConnection(); // TODO Comment
+
+    void setDynamicPayload(bool on); // TODO Comment
 };
 
 
