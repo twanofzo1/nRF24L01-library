@@ -6,6 +6,9 @@ const byte address[5] = {'N', 'O', 'D', 'E', '1'};
 
 void setup() {
     Serial.begin(9600);
+
+    delay(1);
+
     radio.begin();
 
     radio.setPayloadSize(nRF24L01_PayloadSize_32_BYTES, nRF24L01_Pipe_P0);
@@ -14,7 +17,6 @@ void setup() {
     radio.setFrequency(76); // = 2476 MHz
     radio.setPowerMode(nRF24L01_PowerMode_0_dBm);
     radio.setRetransmits(ARC_Retransmit_15_Times, ARD_Wait_uS_500);
-    //radio.setDynamicPayload(true);
     radio.setTX_adress(address, 5);
     radio.setRX_Address(nRF24L01_Pipe_P0, address, 5);
     
@@ -22,7 +24,7 @@ void setup() {
     radio.setMode(nRF24L01_Mode_TRANSMIT);
 }
 
-void loop() {
+void loop() {/*
     String msg = "hellohellohellohellohellohellooo";
     Serial.print("Sending: ");
     Serial.println(msg);
@@ -36,4 +38,5 @@ void loop() {
     }
 
     delay(1000);
+    */
 }

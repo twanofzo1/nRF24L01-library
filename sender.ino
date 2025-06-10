@@ -1,3 +1,4 @@
+
 #include "nRF24L01.h"
 
 nRF24L01 radio(2, 3); // CE = 9, CSN = 10
@@ -23,7 +24,7 @@ void setup() {
 }
 
 void loop() {
-    String msg = "hello";
+    String msg = "hellohellohellohellohellohellooo";
     Serial.print("Sending: ");
     Serial.println(msg);
 
