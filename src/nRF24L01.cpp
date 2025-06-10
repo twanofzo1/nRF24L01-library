@@ -188,6 +188,7 @@ namespace FEATURE{
     inline constexpr uint8_t EN_DYN_ACK  = BIT_0                                  ; 
     inline constexpr uint8_t ALL         = 0x73                                   ;
     inline constexpr uint8_t RESET_VALUE = 0x00                                   ; 
+    inline constexpr uint8_t ACTIVATE    = 0x73                                   ;
 }
 
 //Datasheet chapter SPI commands 8.x
@@ -305,7 +306,8 @@ void nRF24L01::resetRegisters() {
     writeRegister(SETUP_RETR::ADRESS , SETUP_RETR::RESET_VALUE);
     writeRegister(RF_CH::ADRESS      , RF_CH::RESET_VALUE);
     writeRegister(RF_SETUP::ADRESS   , RF_SETUP::RESET_VALUE);
-    writeRegister(RX_ADDR::P0        , const_cast<uint8_t*>(RX_ADDR::P0_RESET_VALUE), 5); //constexpr makes const uint8_t so cast to non const uint8_t
+    //constexpr makes const uint8_t so cast to non const uint8_t
+    writeRegister(RX_ADDR::P0        , const_cast<uint8_t*>(RX_ADDR::P0_RESET_VALUE), 5); 
     writeRegister(STATUS::ADRESS     , STATUS::RESET_VALUE);
 }
 
@@ -355,8 +357,8 @@ void nRF24L01::flushRX() {
 
 void nRF24L01::writeTX_Buffer(String& data) {
     #ifdef nRF24L01_DEBUG
-        Serial.println("nRF24L01: flushing RX");
-    #endif 
+        Serial.println("nRF24L01: writeTX_Buffer():");
+    #endif
     beginTransaction();
     SPI.transfer(SPICOMMAND::W_TX_PAYLOAD);
     const char* str = data.c_str();
@@ -371,6 +373,9 @@ void nRF24L01::writeTX_Buffer(String& data) {
 
 
 String nRF24L01::readData() {
+    #ifdef nRF24L01_DEBUG
+        Serial.println("nRF24L01: readData():");
+    #endif
     if (!(readRegister(STATUS::ADRESS) & STATUS::RX_DR)) {
         #ifdef nRF24L01_DEBUG
             Serial.println("nRF24L01: RX_DR not set");
@@ -390,7 +395,7 @@ String nRF24L01::readData() {
    
 
     beginTransaction();
-    SPI.transfer(SPICOMMAND::R_RX_PAYLOAD);
+    SPI.transfer(SPICOMMAND::R_RX_PAYLOAD); // read the payload
 
     String result;
     result.reserve(payloadLength + 1); // accound for \0
@@ -424,10 +429,7 @@ nRF24L01::nRF24L01(){}
 nRF24L01::nRF24L01(uint8_t CE_PIN,uint8_t CSN_PIN) : CE_PIN(CE_PIN), CSN_PIN(CSN_PIN){} // sets ce and csn
 
 nRF24L01::~nRF24L01(){
-    writeRegister(
-        CONFIG::ADRESS,
-        readRegister(CONFIG::ADRESS) & ~CONFIG::PWR_UP
-    ); // power down the chip to minimise power consumption
+    writebit(CONFIG::ADRESS,CONFIG::PWR_UP,false); // power down 
 }
 
 
@@ -482,15 +484,14 @@ void nRF24L01::begin(){
 
 
 bool nRF24L01::isDataAvaliable() {
-    uint8_t status = readRegister(STATUS::ADRESS);
-    bool available = (status & STATUS::RX_DR);
     #ifdef nRF24L01_DEBUG
+        bool available = (readRegister(STATUS::ADRESS) & STATUS::RX_DR);
         if (available) {
             Serial.println("nRF24L01: data is available");
-        }
+        }    
+        return available;
     #endif
-    
-    return available;
+    return (readRegister(STATUS::ADRESS) & STATUS::RX_DR); // check if there is data availiable
 }
 
 
@@ -672,7 +673,7 @@ void nRF24L01::setRX_Address(nRF24L01_Pipe pipe, const uint8_t* address, uint8_t
     if (pipe > nRF24L01_Pipe_P5) return;
 
     beginTransaction();
-    SPI.transfer(SPICOMMAND::W_REGISTER | (0x0A + pipe)); // RX_ADDR_P0–P5 
+    SPI.transfer(SPICOMMAND::W_REGISTER | (RX_ADDR::P0 + pipe)); // RX_ADDR_P0–P5 = 0x0A–0x0F
 
     // Pipe 0 and 1 use full address, pipes 2–5 only use LSB
     if (pipe <= nRF24L01_Pipe_P1) {
@@ -687,9 +688,25 @@ void nRF24L01::setRX_Address(nRF24L01_Pipe pipe, const uint8_t* address, uint8_t
 }
 
 
+
+void nRF24L01::testConnection(){ // test the spi connection
+    uint8_t tmp = readRegister(SETUP_AW::ADRESS);
+    writeRegister(SETUP_AW::ADRESS, 0x03); // test write (5-byte address width) 
+
+    if (readRegister(SETUP_AW::ADRESS) != 0x03){
+        Serial.println("nRF24L01: begin() failed: SPI connection failed, please check your wiring");
+        return;
+    } else{
+        Serial.println("nRF24L01: SPI works");
+    }
+    writeRegister(SETUP_AW::ADRESS, tmp); // restore original
+}
+
 void nRF24L01::toggleFeatures() {
-    writeRegister(SPICOMMAND::ACTIVATE,FEATURE::ALL);
-    // TODO test code
+    beginTransaction();
+    SPI.transfer(SPICOMMAND::ACTIVATE);
+    SPI.transfer(0x73); //TODO magic number
+    endTransaction();
 }
 
 
