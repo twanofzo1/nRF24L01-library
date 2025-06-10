@@ -11,7 +11,7 @@ void setup() {
     radio.setPayloadSize(nRF24L01_PayloadSize_32_BYTES, nRF24L01_Pipe_P0);
     radio.setAdressWidth(nRF24L01_AdressWidth_5_Bytes);
     radio.setAirDataRate(nRF24L01_AirDataRate_1_Mbps);
-    radio.setFrequency(76); // = 2476 MHz
+    radio.setFrequency(76);
     radio.setPowerMode(nRF24L01_PowerMode_0_dBm);
     radio.setRetransmits(ARC_Retransmit_15_Times, ARD_Wait_uS_500);
     //radio.setDynamicPayload(true);
