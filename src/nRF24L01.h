@@ -1,29 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-//#define nRF24L01_DEBUG
-//#define nRF24L01_TESTS
-
-
-//TODO 1/2 mbps for chanel
-
-// TODO 
-/*
-void nRF24L01::openWritingPipe(const uint8_t* address, uint8_t len) {
-    writeRegister(RX_ADDR_P0, address, len);
-    writeRegister(TX_ADDR, address, len);
-}
-
-void nRF24L01::openReadingPipe(uint8_t pipe, const uint8_t* address, uint8_t len) {
-    writeRegister(EN_RXADDR, readRegister(EN_RXADDR) | (1 << pipe));
-    if (pipe <= 1) {
-        writeRegister(RX_ADDR_P0 + pipe, address, len);
-    } else {
-        writeRegister(RX_ADDR_P0 + pipe, &address[0], 1); // Only LSB
-    }
-}
-*/
-
 
 
 /**

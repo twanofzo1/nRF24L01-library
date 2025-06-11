@@ -1,6 +1,6 @@
 #include "nRF24L01.h"
 
-nRF24L01 radio(2, 3); // CE = 9, CSN = 10
+nRF24L01 radio(2, 3); // CE = 3, CSN = 3
 
 const byte address[5] = {'N', 'O', 'D', 'E', '1'};
 
@@ -17,8 +17,8 @@ void setup() {
     radio.setFrequency(76);
     radio.setPowerMode(nRF24L01_PowerMode_0_dBm);
     radio.setRetransmits(ARC_Retransmit_15_Times, ARD_Wait_uS_500);
-    radio.setTX_adress(address, 5);
-    radio.setRX_Address(nRF24L01_Pipe_P0, address, 5);
+    radio.setTX_adress(address, 5); // adress = 5
+    radio.setRX_Address(nRF24L01_Pipe_P0, address, 5); // adress = 5
     
 
     radio.setMode(nRF24L01_Mode_TRANSMIT);
