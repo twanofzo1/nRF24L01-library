@@ -691,7 +691,7 @@ void nRF24L01::setRX_Address(nRF24L01_Pipe pipe, const uint8_t* address, uint8_t
 void nRF24L01::toggleFeatures() {
     beginTransaction();
     SPI.transfer(SPICOMMAND::ACTIVATE);
-    SPI.transfer(0x73); //TODO magic number
+    SPI.transfer(FEATURE::ALL);
     endTransaction();
 }
 
@@ -700,6 +700,11 @@ void nRF24L01::setDynamicPayload(bool on) {
     toggleFeatures();
     writebit(FEATURE::ADRESS, FEATURE::EN_DPL, on);
     writebits(DYNPD::ADRESS, on ? (0xFF & (~DYNPD::BIT_MASK)) : 0x00,(0xFF & (~DYNPD::BIT_MASK))); // turn all on/off
+
+    #ifdef nRF24L01_TESTS
+        //EN_AA::PIPE == pipe
+        assertBits("setRX_Pipe()",on ? (1 << pipe) : 0,readRegister(EN_AA::ADRESS),(1 << pipe));
+    #endif
     // TODO test code
 }
 
