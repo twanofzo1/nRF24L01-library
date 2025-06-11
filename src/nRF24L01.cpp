@@ -688,20 +688,6 @@ void nRF24L01::setRX_Address(nRF24L01_Pipe pipe, const uint8_t* address, uint8_t
 }
 
 
-
-void nRF24L01::testConnection(){ // test the spi connection
-    uint8_t tmp = readRegister(SETUP_AW::ADRESS);
-    writeRegister(SETUP_AW::ADRESS, 0x03); // test write (5-byte address width) 
-
-    if (readRegister(SETUP_AW::ADRESS) != 0x03){
-        Serial.println("nRF24L01: begin() failed: SPI connection failed, please check your wiring");
-        return;
-    } else{
-        Serial.println("nRF24L01: SPI works");
-    }
-    writeRegister(SETUP_AW::ADRESS, tmp); // restore original
-}
-
 void nRF24L01::toggleFeatures() {
     beginTransaction();
     SPI.transfer(SPICOMMAND::ACTIVATE);
@@ -727,19 +713,6 @@ uint8_t nRF24L01::getDynamicPayloadLength() {
 }
 
 
-//#ifdef // TODO debug mode
-void nRF24L01::testConnection(){
-    uint8_t tmp = readRegister(SETUP_AW::ADRESS);
-    writeRegister(SETUP_AW::ADRESS, 0x03); // test write (0x03 is test value)
-    if (readRegister(SETUP_AW::ADRESS) != 0x03){
-        Serial.println("nRF24L01 begin() failed: SPI connection failed, please check your wiring");
-        return;
-    } else{
-        Serial.println("SPI works");
-    }
-    writeRegister(SETUP_AW::ADRESS, tmp); // restore original
-}
-
 
 
 #ifdef nRF24L01_TESTS
@@ -764,4 +737,17 @@ void assertBits(String func, uint8_t expected, uint8_t got, uint8_t mask) {
 }
 #endif
 
+#ifdef nRF24L01_DEBUG
+void nRF24L01::testConnection(){ // test the spi connection
+    uint8_t tmp = readRegister(SETUP_AW::ADRESS);
+    writeRegister(SETUP_AW::ADRESS, 0x03); // test write (5-byte address width) 
 
+    if (readRegister(SETUP_AW::ADRESS) != 0x03){
+        Serial.println("nRF24L01: begin() failed: SPI connection failed, please check your wiring");
+        return;
+    } else{
+        Serial.println("nRF24L01: SPI works");
+    }
+    writeRegister(SETUP_AW::ADRESS, tmp); // restore original
+}
+#endif
