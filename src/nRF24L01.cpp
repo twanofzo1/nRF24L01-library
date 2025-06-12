@@ -36,7 +36,7 @@ namespace CONFIG{ // register used to configure the chip
     inline constexpr uint8_t RESET_VALUE = 0x08  ;   
 }
 
-namespace EN_AA{
+namespace EN_AA{ //Enable Auto Acknowledgment
     inline constexpr uint8_t ADRESS      = 0x01            ;                         
     inline constexpr uint8_t P5          = BIT_5           ;    
     inline constexpr uint8_t P4          = BIT_4           ;    
@@ -49,7 +49,7 @@ namespace EN_AA{
     inline constexpr uint8_t RESET_VALUE = 0x3F            ;    
 }
 
-namespace EN_RXADDR{               
+namespace EN_RXADDR{ //Enabled RX Addresses
     inline constexpr uint8_t ADRESS      = 0x02            ;   
     inline constexpr uint8_t P5          = BIT_5           ;   
     inline constexpr uint8_t P4          = BIT_4           ;   
@@ -61,7 +61,7 @@ namespace EN_RXADDR{
     inline constexpr uint8_t RESET_VALUE = 0x03            ;       
 }
 
-namespace SETUP_AW{
+namespace SETUP_AW{ //Setup of Address Widths
     inline constexpr uint8_t ADRESS      = 0x03                ;  
     inline constexpr uint8_t AW          = (BIT_1 | BIT_0)     ;  
     inline constexpr uint8_t AW_ILLEGAL  = 0x0                 ;  
@@ -69,20 +69,20 @@ namespace SETUP_AW{
     inline constexpr uint8_t RESET_VALUE = 0x03                ;  
 }
 
-namespace SETUP_RETR{
+namespace SETUP_RETR{ //Setup of Automatic Retransmission
     inline constexpr uint8_t ADRESS      = 0x04                           ; 
     inline constexpr uint8_t ARD         = (BIT_7 | BIT_6 | BIT_5 | BIT_4); 
     inline constexpr uint8_t ARC         = (BIT_3 | BIT_2 | BIT_1 | BIT_0); 
     inline constexpr uint8_t RESET_VALUE = 0x03                           ; 
 }
 
-namespace RF_CH{
+namespace RF_CH{ //RF Channel
     inline constexpr uint8_t ADRESS            = 0x05  ; 
     inline constexpr uint8_t BIT_MASK    = BIT_7 ; 
     inline constexpr uint8_t RESET_VALUE = 0x02  ; 
 }
 
-namespace RF_SETUP{
+namespace RF_SETUP{ //RF Setup Register
     inline constexpr uint8_t ADRESS      = 0x06                            ; 
     inline constexpr uint8_t PLL_LOCK    = BIT_4                           ; 
     inline constexpr uint8_t DR          = BIT_3                           ; 
@@ -92,7 +92,7 @@ namespace RF_SETUP{
     inline constexpr uint8_t RESET_VALUE = 0x0F                            ; 
 }
 
-namespace STATUS{
+namespace STATUS{ //Status Register
     inline constexpr uint8_t ADRESS      = 0x07                    ; 
     inline constexpr uint8_t BIT_MASK    = BIT_7                   ; 
     inline constexpr uint8_t RX_DR       = BIT_6                   ; 
@@ -103,20 +103,20 @@ namespace STATUS{
     inline constexpr uint8_t RESET_VALUE = 0x70                    ; 
 }
 
-namespace OBSERVE_TX{
+namespace OBSERVE_TX{ //Transmit observe register
     inline constexpr uint8_t ADRESS      = 0x08                            ; 
     inline constexpr uint8_t PLOS_CNT    = (BIT_7 | BIT_6 | BIT_5 | BIT_4) ; 
     inline constexpr uint8_t ARC_CNT     = (BIT_3 | BIT_2 | BIT_1 | BIT_0) ; 
     inline constexpr uint8_t RESET_VALUE = 0x00                            ; 
 }
 
-namespace CD{
+namespace CD{ // Carrier Detect
     inline constexpr uint8_t ADRESS         = 0x09     ; 
     inline constexpr uint8_t CD_BIT_MASK    = (~BIT_0) ; 
     inline constexpr uint8_t CD_RESET_VALUE = 0x00     ; 
 }     
 
-namespace RX_ADDR{
+namespace RX_ADDR{ //Receive address data pipe
     inline constexpr uint8_t P0                = 0x0A                           ;  
     inline constexpr uint8_t P0_RESET_VALUE[5] = {0xE7, 0xE7, 0xE7, 0xE7, 0xE7} ;  
     inline constexpr uint8_t P1                = 0x0B                           ;  
@@ -131,12 +131,12 @@ namespace RX_ADDR{
     inline constexpr uint8_t P5_RESET_VALUE    = 0xC6                           ; 
 }
 
-namespace TX_ADDR{
+namespace TX_ADDR{ //Transmit address
     inline constexpr uint8_t ADRESS         = 0x10                        ;
     inline constexpr uint8_t RESET_VALUE[5] =  {0xE7,0xE7,0xE7,0xE7,0xE7} ;
 }
 
-namespace RX_PW{
+namespace RX_PW{ //Number of bytes in RX payload
     inline constexpr uint8_t P0              = 0x11            ;        
     inline constexpr uint8_t P0_RESET_VALUE  = 0x00            ;        
     inline constexpr uint8_t P0_BIT_MASK     = (BIT_6 | BIT_7) ;    
@@ -157,7 +157,7 @@ namespace RX_PW{
     inline constexpr uint8_t P5_BIT_MASK     = (BIT_6 | BIT_7) ;    
 }
 
-namespace FIFO_STATUS{
+namespace FIFO_STATUS{ // FIFO Status Register
     inline constexpr uint8_t ADRESS               = 0x17                    ; 
     inline constexpr uint8_t TX_REUSE             = BIT_6                   ; 
     inline constexpr uint8_t TX_FULL              = BIT_5                   ; 
@@ -168,7 +168,7 @@ namespace FIFO_STATUS{
     inline constexpr uint8_t RESET_VALUE          = 0x11                    ; 
 }
 
-namespace DYNPD{
+namespace DYNPD{ // Enable dynamic payload length
     inline constexpr uint8_t ADRESS      = 0x1C            ; 
     inline constexpr uint8_t BIT_MASK    = (BIT_6 | BIT_7) ; 
     inline constexpr uint8_t DPL_P5      = BIT_5           ; 
@@ -180,7 +180,7 @@ namespace DYNPD{
     inline constexpr uint8_t RESET_VALUE = 0x00            ; 
 }
 
-namespace FEATURE{
+namespace FEATURE{ //Feature Register
     inline constexpr uint8_t ADRESS      = 0x1D                                   ; 
     inline constexpr uint8_t BIT_MASK    = (BIT_7 | BIT_6 | BIT_5 | BIT_4 | BIT_3); 
     inline constexpr uint8_t EN_DPL      = BIT_2                                  ; 
@@ -509,19 +509,19 @@ nRF24L01_Status nRF24L01::send(String& data) {
             writebit(STATUS::ADRESS, STATUS::TX_DS, true); // clear flags
             break;
         }
-        if (status & STATUS::MAX_RT) {
+        else if (status & STATUS::MAX_RT) {
             writebit(STATUS::ADRESS, STATUS::MAX_RT, true); // clear flags
             flushTX(); // flush the failed payload
             return nRF24L01_Status::ERROR_MAX_RT_REACHED;
         }
-        if (millis() - startTime > 95) {
+        else if (millis() - startTime > 100) { // if the time exeeds 100 ms return tx is still full
             return nRF24L01_Status::ERROR_TX_FIFO_FULL;
         }
     }
     
     // wait for tx to be empty to be empty
     while (!(readRegister(FIFO_STATUS::ADRESS) & FIFO_STATUS::TX_EMPTY)) {
-        delayMicroseconds(100);
+        delayMicroseconds(100); 
     }
 
     return nRF24L01_Status::nRF24L01_Status_OK;
@@ -615,8 +615,12 @@ void nRF24L01::setPayloadSize(nRF24L01_PayloadSize size, nRF24L01_Pipe pipe) {
 
     #ifdef nRF24L01_TESTS
         // RX_PW::P0-RX_PW::P5 == size
-        for (uint8_t i = 0; i <= 5; ++i) {
-            assert("setPayloadSize", size, readRegister(RX_PW::P0 + i));
+        if (pipe == nRF24L01_Pipe_ALL) {
+            for (uint8_t i = 0; i <= 5; ++i) {
+                assert("setPayloadSize", size, readRegister(RX_PW::P0 + i));
+            }
+        } else {
+            assert("setPayloadSize", size, readRegister(RX_PW::P0 + pipe));
         }
     #endif
 }
@@ -626,7 +630,7 @@ void nRF24L01::setAdressWidth(nRF24L01_AdressWidth adresswidth){
 
     #ifdef nRF24L01_TESTS
         //SETUP_AW::AW == adresswidth
-        assertBits("setAdressWidth()",adresswidth,readRegister(SETUP_AW::ADRESS),SETUP_AW::AW);
+        assertBits("setAdressWidth",adresswidth,readRegister(SETUP_AW::ADRESS),SETUP_AW::AW);
     #endif
 }
 
@@ -635,7 +639,7 @@ void nRF24L01::setAirDataRate(nRF24L01_AirDataRate rate){
 
     #ifdef nRF24L01_TESTS
         //RF_SETUP::DR == rate
-        assertBits("setAirDataRate()",rate,readRegister(RF_SETUP::ADRESS),RF_SETUP::DR);
+        assertBits("setAirDataRate",rate,readRegister(RF_SETUP::ADRESS),RF_SETUP::DR);
     #endif
 }
 
@@ -645,14 +649,14 @@ void nRF24L01::setRX_Pipe(nRF24L01_Pipe pipe, bool on) {
 
         #ifdef nRF24L01_TESTS
             //EN_AA::PIPE == pipe
-            assertBits("setRX_Pipe()",on ? EN_AA::ALL : 0x00,readRegister(EN_AA::ADRESS),EN_AA::ALL);
+            assertBits("setRX_Pipe",on ? EN_AA::ALL : 0x00,readRegister(EN_AA::ADRESS),EN_AA::ALL);
         #endif
     } else {
-        writebit(EN_AA::ADRESS,(1 << pipe),on); // FIXME if breaks
+        writebit(EN_AA::ADRESS,(1 << pipe),on);
 
         #ifdef nRF24L01_TESTS
             //EN_AA::PIPE == pipe
-            assertBits("setRX_Pipe()",on ? (1 << pipe) : 0,readRegister(EN_AA::ADRESS),(1 << pipe));
+            assertBits("setRX_Pipe",on ? (1 << pipe) : 0,readRegister(EN_AA::ADRESS),(1 << pipe));
         #endif
     }
 
@@ -702,8 +706,9 @@ void nRF24L01::setDynamicPayload(bool on) {
     writebits(DYNPD::ADRESS, on ? (0xFF & (~DYNPD::BIT_MASK)) : 0x00,(0xFF & (~DYNPD::BIT_MASK))); // turn all on/off
 
     #ifdef nRF24L01_TESTS
-        //EN_AA::PIPE == pipe
-        assertBits("setRX_Pipe()",on ? (1 << pipe) : 0,readRegister(EN_AA::ADRESS),(1 << pipe));
+        // DYNPD register should match dynamic payload enable state
+        assertBits("setDynamicPayload()",on? 0xFF:0x00,readRegister(DYNPD::ADRESS), DYNPD::BIT_MASK);
+        assertBits("setDynamicPayload()",on? 0xFF:0x00,readRegister(FEATURE::ADRESS), FEATURE::EN_DPL);
     #endif
     // TODO test code
 }
